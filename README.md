@@ -9,3 +9,7 @@ Supported types:
 - json
 - parquet
 
+## Deploy
+1. Unpack archive in postprocessing commands directory
+2. Configure `config.ini` with path to storage
+
