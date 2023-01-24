@@ -10,20 +10,20 @@ all:
  pack - make output archive, file name format \"readFile_vX.Y.Z_BRANCHNAME.tar.gz\"\n\
 "
 
-VERSION := "0.0.1"
+VERSION := "0.0.2"
 BRANCH := $(shell git name-rev $$(git rev-parse HEAD) | cut -d\  -f2 | sed -re 's/^(remotes\/)?origin\///' | tr '/' '_')
 
 pack: make_build
 	rm -f readFile-*.tar.gz
 	echo Create archive \"readFile-$(VERSION)-$(BRANCH).tar.gz\"
-	cd make_build; tar czf ../readFile-$(VERSION)-$(BRANCH).tar.gz readFile
+	cd make_build; tar czf ../readFile-$(VERSION)-$(BRANCH).tar.gz readFile writeFile
 
 clean_pack:
 	rm -f readFile-*.tar.gz
 
 
 readFile.tar.gz: build
-	cd make_build; tar czf ../readFile.tar.gz readFile && rm -rf ../make_build
+	cd make_build; tar czf ../readFile.tar.gz readFile writeFile && rm -rf ../make_build
 
 build: make_build
 
@@ -32,7 +32,9 @@ make_build:
 	echo make_build
 	mkdir make_build
 	cp -R ./readFile make_build
+	cp -R ./writeFile make_build
 	cp *.md make_build/readFile/
+	cp *.md make_build/writeFile/
 
 
 

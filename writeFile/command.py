@@ -3,6 +3,7 @@ from pathlib import Path
 
 from otlang.sdk.syntax import Keyword, Positional, OTLType
 from pp_exec_env.base_command import BaseCommand, Syntax
+from df_storage import DfStorage
 
 
 class WritefileCommand(BaseCommand):
@@ -11,38 +12,34 @@ class WritefileCommand(BaseCommand):
         [
             Positional("filename", required=True, otl_type=OTLType.TEXT),
             Keyword("type", required=False, otl_type=OTLType.TEXT),
+            Keyword("storage", required=False, otl_type=OTLType.TEXT),
+            Keyword("private", required=False, otl_type=OTLType.BOOLEAN)
         ],
     )
 
     def transform(self, df: pd.DataFrame) -> pd.DataFrame:
 
-        filename = self.get_arg("filename").value
-        type = self.get_arg("type").value or filename.split('.')[-1]
-
-        if 'storage' in self.config:
-            storage = self.config['storage']['path']
+        if 'storages' in self.config:
+            storages = self.config['storages']
         else:
-            storage = '/opt/otp/shared_storage/persistent_storage'
+            storages = {
+                'lookups': '/opt/otp/lookups'
+            }
+
+        storage = self.get_arg('storage').value or 'lookups'
+        if storage not in storages:
+            raise ValueError('Unknown storage')
+
         Path(storage).mkdir(exist_ok=True, parents=True)
-        full_file_path = Path(f'{storage}/{filename}')
+        df_storage = DfStorage(
+            storages[storage],
+            user_id=self.platform_envs['user_guid'],
+            private=self.get_arg('private').value
+        )
 
-        if df is None:
-            df = pd.DataFrame()
-
-        self.log_progress(f'Start writing to {storage}/{filename}', stage=1, total_stages=2)
-        if type == 'parquet':
-            df.to_parquet(
-                full_file_path, engine='pyarrow', compression=None
-            )
-        elif type == 'json':
-            df.to_json(
-                full_file_path, orient='records', lines=True
-            )
-        elif type == 'csv':
-            df.to_csv(
-                full_file_path
-            )
-        else:
-            raise ValueError('Unknown type')
-        self.log_progress(f'Writing is done {storage}/{filename}', stage=2, total_stages=2)
+        df_storage.write(
+            df,
+            self.get_arg('filename').value,
+            self.get_arg('type').value
+        )
         return df

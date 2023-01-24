@@ -2,6 +2,7 @@ import pandas as pd
 from pathlib import Path
 from otlang.sdk.syntax import Keyword, Positional, OTLType
 from pp_exec_env.base_command import BaseCommand, Syntax
+from df_storage import DfStorage
 
 
 class ReadfileCommand(BaseCommand):
@@ -10,34 +11,35 @@ class ReadfileCommand(BaseCommand):
         [
             Positional("filename", required=True, otl_type=OTLType.TEXT),
             Keyword("type", required=False, otl_type=OTLType.TEXT),
+            Keyword("storage", required=False, otl_type=OTLType.TEXT),
+            Keyword("private", required=False, otl_type=OTLType.BOOLEAN)
         ],
     )
     use_timewindow = False  # Does not require time window arguments
     idempotent = True  # Does not invalidate cache
 
     def transform(self, df: pd.DataFrame) -> pd.DataFrame:
-        filename = self.get_arg("filename").value
-        type = self.get_arg("type").value or filename.split('.')[-1]
 
-        if 'storage' in self.config:
-            storage = self.config['storage']['path']
+        if 'storages' in self.config:
+            storages = self.config['storages']
         else:
-            storage = '/opt/otp/shared_storage/persistent_storage'
+            storages = {
+                'lookups': '/opt/otp/lookups'
+            }
+
+        storage = self.get_arg('storage').value or 'lookups'
+        if storage not in storages:
+            raise ValueError('Unknown storage')
 
         Path(storage).mkdir(exist_ok=True, parents=True)
+        df_storage = DfStorage(
+            storages[storage],
+            user_id=self.platform_envs['user_guid'],
+            private=self.get_arg('private').value
+        )
 
-        full_file_path = Path(f'{storage}/{filename}')
-        # check file exists
-        if not full_file_path.exists():
-            raise ValueError('File not exists')
-        if type == 'json':
-            df = pd.read_json(full_file_path, lines=True)
-        elif type == 'parquet':
-            df = pd.read_parquet(
-                full_file_path, engine='pyarrow', use_pandas_metadata=True
-            )
-        elif type == 'csv':
-            df = pd.read_csv(full_file_path)
-        else:
-            raise ValueError('Unknown type')
+        df = df_storage.read(
+            self.get_arg('filename').value,
+            self.get_arg('type').value
+        )
         return df
