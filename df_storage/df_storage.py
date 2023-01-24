@@ -29,7 +29,6 @@ class DfStorage:
             df_storage_dir.mkdir(parents=True, exist_ok=True)
 
         full_df_path = df_storage_dir / df_name
-
         self._save_pandas_df(df, full_df_path, file_type)
 
     def _save_pandas_df(self, df, full_df_path, file_type=None):
@@ -68,8 +67,8 @@ class DfStorage:
         return df
 
     @staticmethod
-    def _get_file_type(self, file_name, file_type=None):
-        file_type = file_type or file_name.split('.')[-1]
+    def _get_file_type(file_name, file_type=None):
+        file_type = file_type or str(file_name).split('.')[-1]
         return file_type
 
     def read(self, df_path: str, file_type=None):
