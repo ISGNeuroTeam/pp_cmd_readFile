@@ -16,14 +16,14 @@ BRANCH := $(shell git name-rev $$(git rev-parse HEAD) | cut -d\  -f2 | sed -re '
 pack: make_build
 	rm -f readFile-*.tar.gz
 	echo Create archive \"readFile-$(VERSION)-$(BRANCH).tar.gz\"
-	cd make_build; tar czf ../readFile-$(VERSION)-$(BRANCH).tar.gz readFile writeFile
+	cd make_build; tar czf ../readFile-$(VERSION)-$(BRANCH).tar.gz readFile writeFile read_file_venv
 
 clean_pack:
 	rm -f readFile-*.tar.gz
 
 
 readFile.tar.gz: build
-	cd make_build; tar czf ../readFile.tar.gz readFile writeFile && rm -rf ../make_build
+	cd make_build; tar czf ../readFile.tar.gz readFile writeFile read_file_venv && rm -rf ../make_build
 
 build: make_build
 
@@ -36,6 +36,8 @@ make_build:
 	cp *.md make_build/readFile/
 	cp *.md make_build/writeFile/
 
+	mkdir -p make_build/read_file_venv/lib/python3.9/site-packages
+	cp -R ./df_storage  make_build/read_file_venv/lib/python3.9/site-packages
 
 
 clean_build:
