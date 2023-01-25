@@ -5,9 +5,9 @@ from pathlib import Path
 
 
 class DfStorage:
-    def __init__(self, storage_dir: str, user_id: str = None, private: bool = False):
+    def __init__(self, storage_dir: str, user_id: str, private: bool = False):
         self.storage_dir = Path(storage_dir)
-        self.user_id = user_id
+        self.user_id = str(user_id)
         self.private = private
 
         if self.user_id is None and self.private:
@@ -21,7 +21,7 @@ class DfStorage:
         path_in_storage, df_name = self._get_path_in_storage_and_name(df_path)
 
         if self.private:
-            df_storage_dir = self._get_private_storage_path(self.user_id) / path_in_storage
+            df_storage_dir = self._get_private_storage_path() / path_in_storage
         else:
             df_storage_dir = self._get_public_storage_path() / path_in_storage
 
@@ -73,7 +73,7 @@ class DfStorage:
 
     def read(self, df_path: str, file_type=None):
         path_in_storage, df_name = self._get_path_in_storage_and_name(df_path)
-        private_df_full_path = self._get_private_storage_path(self.user_id) / path_in_storage / df_name
+        private_df_full_path = self._get_private_storage_path() / path_in_storage / df_name
         public_df_full_path = self._get_public_storage_path() / path_in_storage / df_name
 
         if public_df_full_path.exists() and not self.private:
@@ -81,7 +81,7 @@ class DfStorage:
         elif self.user_id and private_df_full_path.exists():
             full_df_path = private_df_full_path
         else:
-            raise ValueError(f'Model with path {df_path} not found')
+            raise ValueError(f'File with path {df_path} not found')
 
         return self._read_pandas_df(full_df_path, file_type)
 
@@ -94,22 +94,22 @@ class DfStorage:
             (os.path.join(dp, f).replace(str(public_storage) + os.sep, ''), 'public')
             for dp, dn, filenames in os.walk(public_storage) for f in filenames
         ]
-        private_storage = self._get_private_storage_path(user_id)
+        private_storage = self._get_private_storage_path()
         private_df_list = [
             (os.path.join(dp, f).replace(str(private_storage) + os.sep, ''), 'private')
             for dp, dn, filenames in os.walk(private_storage) for f in filenames
         ]
         return public_df_list + private_df_list
 
-    def _get_private_storage_path(self, user_id: str):
-        return self.storage_dir / user_id
+    def _get_private_storage_path(self):
+        return self.storage_dir / self.user_id
 
     def _get_public_storage_path(self):
         return self.storage_dir
 
-    def delete(self, df_path: str, user_id, private=False):
+    def delete(self, df_path: str, private=False):
         path_in_storage, df_name = self._get_path_in_storage_and_name(df_path)
-        private_df_full_path = self._get_private_storage_path(user_id) / path_in_storage / df_name
+        private_df_full_path = self._get_private_storage_path() / path_in_storage / df_name
         public_df_full_path = self._get_public_storage_path() / path_in_storage / df_name
         if private:
             private_df_full_path.unlink(missing_ok=True)
