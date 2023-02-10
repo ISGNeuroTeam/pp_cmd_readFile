@@ -55,22 +55,8 @@ clean_venv:
 pp_cmd: venv
 	./venv/bin/pp_sdk createcommandlinks
 
-otl_v1_config.ini:
-	echo -e "[spark]\n\
-base_address = http://localhost\n\
-username = admin\n\
-password = 12345678\n\
-\n\
-[caching]\n\
-# 24 hours in seconds\n\
-login_cache_ttl = 86400\n\
-# Command syntax defaults\n\
-default_request_cache_ttl = 100\n\
-default_job_timeout = 100\n\
-" > $@
 
-
-dev: pp_cmd otl_v1_config.ini
+dev: pp_cmd
 	ln -s -r ./readFile pp_cmd/readFile
 
 clean: clean_build clean_pack clean_test clean_venv
